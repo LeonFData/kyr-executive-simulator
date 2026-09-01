@@ -17,7 +17,7 @@ The V4 architecture maps highly granular credit union banking data into five the
 * **Income Volatility:** Calculates the 6-month standard deviation of inflows. Highly volatile income (e.g., erratic contract work) heavily penalizes the score.
 
 ### 2. Cash Out (Consumption & Flexibility)
-* **Inflexible Spending (Fixed):** Captures rigid structural costs using `TransactionCategory == 'Paying Bills'` and `TransactionChannel == 'System'`.
+* **Inflexible Spending:** Captures rigid structural costs using `TransactionCategory == 'Paying Bills'` and `TransactionChannel == 'System'`.
 * **Spending Flexibility:** Captures adaptable consumption using `TransactionChannel == 'POS'` and `'ATM'`. A high POS ratio rewards the member for possessing a financial "throttle" they can pull back during a shock.
 * **Spending Volatility:** The 6-month standard deviation of outflows. In the V4 model, this is the single highest-weighted cash-flow indicator; extreme consumption spikes reliably predict overdrafts.
 
