@@ -1,0 +1,586 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYR Executive Simulator | V4 Model</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { burgundy: { 50: '#fdf3f4', 100: '#fbe4e8', 200: '#f7cdd4', 300: '#f0aab5', 400: '#e57a8c', 500: '#d54d63', 600: '#bf344c', 700: '#a0253a', 800: '#862235', 900: '#722131', 950: '#400e18' } } } }
+        }
+    </script>
+</head>
+<body class="bg-stone-100 text-stone-800 font-sans antialiased" x-data="kyrApp()">
+
+    <!-- Header -->
+    <header class="bg-burgundy-950 text-white shadow-xl border-b-[6px] border-burgundy-700 relative z-20">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="bg-gradient-to-br from-burgundy-700 to-burgundy-900 p-3 rounded-xl shadow-inner border border-burgundy-600">
+                    <i class="fa-solid fa-shield-halved text-2xl text-burgundy-100"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wider text-white">KYR SCORING ENGINE</h1>
+                    <p class="text-sm font-medium text-burgundy-300">Member-Centric Simulator (V4.2)</p>
+                </div>
+            </div>
+            <button @click="resetDefaults()" class="bg-burgundy-800 hover:bg-burgundy-700 text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors shadow-md flex items-center space-x-2 border border-burgundy-600">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Reset Profile</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+        
+        <!-- LEFT PANEL: Inputs (7 Cols) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl shadow-lg border border-stone-200 flex flex-col">
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-stone-200 bg-stone-50 px-2 pt-2 space-x-2 overflow-x-auto rounded-t-2xl">
+                <template x-for="tab in tabs" :key="tab.id">
+                    <button @click="activeTab = tab.id"
+                        :class="activeTab === tab.id ? 'bg-white text-burgundy-900 border-t-2 border-burgundy-700 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]' : 'text-stone-500 hover:bg-stone-200 border-t-2 border-transparent'"
+                        class="flex items-center space-x-2 px-5 py-3 rounded-t-lg text-sm font-bold transition-all whitespace-nowrap cursor-pointer">
+                        <i :class="tab.icon"></i>
+                        <span x-text="tab.name"></span>
+                    </button>
+                </template>
+            </div>
+
+            <!-- Tab Content Area -->
+            <div class="p-8 flex-1 overflow-y-auto max-h-[700px] relative">
+                
+                <!-- TAB 1: CASH IN -->
+                <div x-show="activeTab === 'cash_in'" x-transition.opacity class="space-y-8">
+                    <div class="flex items-center justify-between border-b-2 border-burgundy-100 pb-2">
+                        <h2 class="text-xl font-black text-burgundy-900">Monthly Income Profile</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Salary / Paycheck ($/mo)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> TransactionCategory == 'Depositing'<br><i>Behind the stage:</i> Multiplied by 24 to calculate the algorithm's Total Inflow metric.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.in_salary" @input="syncIncome()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium focus:ring-2 focus:ring-burgundy-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>e-Transfers In ($/mo)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full right-0 md:-left-32 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> TransactionType == 'Transfer In'<br><i>Behind the stage:</i> Captures digital side-hustle and gig income. Added to salary and multiplied by 24.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.in_transfers" @input="syncIncome()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium focus:ring-2 focus:ring-burgundy-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-50 p-5 rounded-xl border border-stone-200 shadow-sm relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center">
+                                <h3 class="text-sm font-black text-stone-800 uppercase tracking-wider">Past 6 Months Income ($)</h3>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Algorithm Math:</strong> Standard deviation of monthly inflows. High SD triggers the <b>High Vol Inflows (-20 pts)</b> penalty.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] uppercase text-stone-500 font-bold">Volatility (Std Dev)</span>
+                                <div class="text-lg font-black text-burgundy-800" x-text="'$' + Math.round(metrics.inStd).toLocaleString()"></div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-stone-500 mb-4">Edit individual months to simulate income shocks or bonuses.</p>
+                        
+                        <div class="grid grid-cols-6 gap-2">
+                            <template x-for="(val, index) in inputs.inflow_monthly" :key="index">
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 block mb-1 text-center" x-text="'M-' + (6-index)"></label>
+                                    <input type="number" x-model.number="inputs.inflow_monthly[index]" @input="updateCharts()" class="w-full bg-white border border-stone-300 rounded-md px-1 py-1.5 text-xs text-center font-medium focus:ring-1 focus:ring-burgundy-500 outline-none">
+                                </div>
+                            </template>
+                        </div>
+                        <div class="pt-4 h-32 w-full"><canvas id="inflowChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: CASH OUT -->
+                <div x-show="activeTab === 'cash_out'" x-transition.opacity class="space-y-8" style="display: none;">
+                    <div class="flex items-center justify-between border-b-2 border-burgundy-100 pb-2">
+                        <h2 class="text-xl font-black text-burgundy-900">Monthly Spending Profile</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Fixed Costs -->
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Bills & Utilities ($/mo)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> Category 'Paying Bills'<br><i>Behind the stage:</i> Used to calculate structural rigidity / fixed-cost burden.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.out_bills" @input="syncSpending()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>System / Subscriptions ($/mo)</span>
+                            </label>
+                            <input type="number" x-model.number="inputs.out_system" @input="syncSpending()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium outline-none">
+                        </div>
+                        <!-- Flexible Costs -->
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>POS Shopping / Groceries ($/mo)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> Category 'Shopping' & Channel 'POS'<br><i>Behind the stage:</i> Categorized as "Flexible Spending" to reward shock-absorption capacity.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.out_shopping" @input="syncSpending()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Large Purchases (Avg $/mo)</span>
+                            </label>
+                            <input type="number" x-model.number="inputs.out_large" @input="syncSpending()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium outline-none">
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-50 p-5 rounded-xl border border-stone-200 shadow-sm relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center">
+                                <h3 class="text-sm font-black text-stone-800 uppercase tracking-wider">Past 6 Months Spending ($)</h3>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Algorithm Math:</strong> Volatility drives the massive <b>±48 Pts Stable Spending</b> metric. Severe spikes in consumption indicate extreme fragility.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] uppercase text-stone-500 font-bold">Volatility (Std Dev)</span>
+                                <div class="text-lg font-black text-burgundy-800" x-text="'$' + Math.round(metrics.outStd).toLocaleString()"></div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-stone-500 mb-4">Edit months to simulate sudden large purchases or unexpected expenses.</p>
+                        
+                        <div class="grid grid-cols-6 gap-2">
+                            <template x-for="(val, index) in inputs.outflow_monthly" :key="index">
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 block mb-1 text-center" x-text="'M-' + (6-index)"></label>
+                                    <input type="number" x-model.number="inputs.outflow_monthly[index]" @input="updateCharts()" class="w-full bg-white border border-stone-300 rounded-md px-1 py-1.5 text-xs text-center font-medium focus:ring-1 focus:ring-burgundy-500 outline-none">
+                                </div>
+                            </template>
+                        </div>
+                        <div class="pt-4 h-32 w-full"><canvas id="outflowChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: SAVINGS & INVESTMENTS -->
+                <div x-show="activeTab === 'savings'" x-transition.opacity class="space-y-8" style="display: none;">
+                    <div class="flex items-center justify-between border-b-2 border-burgundy-100 pb-2">
+                        <h2 class="text-xl font-black text-burgundy-900">Savings & Investments</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-span-1 md:col-span-2">
+                            <h3 class="text-sm font-bold text-stone-600 mb-3 border-b pb-1">Monthly Contributions</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-700 mb-1">RRSP ($/mo)</label>
+                                    <input type="number" x-model.number="inputs.sav_rrsp" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-700 mb-1">TFSA ($/mo)</label>
+                                    <input type="number" x-model.number="inputs.sav_tfsa" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-700 mb-1">FHSA / RESP ($/mo)</label>
+                                    <input type="number" x-model.number="inputs.sav_other" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-span-1 md:col-span-2 mt-4">
+                            <h3 class="text-sm font-bold text-stone-600 mb-3 border-b pb-1 flex items-center">
+                                Current Investment Balances
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variables:</strong> inv_in_df & inv_out_df.<br>Automatically sums to algorithm's Total Investments asset class for net worth calculations.
+                                    </div>
+                                </div>
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-700 mb-1">RRSP / RRIF ($)</label>
+                                    <input type="number" x-model.number="inputs.bal_rrsp" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-700 mb-1">TFSA ($)</label>
+                                    <input type="number" x-model.number="inputs.bal_tfsa" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-700 mb-1">FHSA / RESP / Cash ($)</label>
+                                    <input type="number" x-model.number="inputs.bal_other" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Months per year saving (0-12)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Algorithm Math:</strong> Multiplied by 2 to determine the 24-month Persistence indicator.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" min="0" max="12" x-model.number="inputs.sav_freq" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5">
+                        </div>
+                        <div class="mt-2">
+                            <label class="block text-sm font-bold text-stone-700 mb-1">Auto-Withdrawal Active?</label>
+                            <select x-model="inputs.sav_auto" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5">
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: LIQUIDITY -->
+                <div x-show="activeTab === 'liquidity'" x-transition.opacity class="space-y-8" style="display: none;">
+                    <div class="flex items-center justify-between border-b-2 border-burgundy-100 pb-2">
+                        <h2 class="text-xl font-black text-burgundy-900">Liquidity & Hard Assets</h2>
+                    </div>
+                    
+                    <div class="bg-burgundy-50 p-4 rounded-xl border border-burgundy-200 flex justify-between items-center mb-4">
+                        <span class="text-sm font-bold text-burgundy-900"><i class="fa-solid fa-scale-balanced mr-2"></i> Real-Time Net Worth</span>
+                        <span class="text-2xl font-black text-burgundy-950" x-text="'$' + metrics.netWorth.toLocaleString()"></span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Chequing / Liquid Savings Balance ($)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> demand_df (Share/Chequing/Savings)<br><i>Behind the stage:</i> Triggers massive buffer rewards if > 1 month of living expenses.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.bal_liquid" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Property Value / Illiquid Assets ($)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> total_value (los_df)<br>If illiquid assets > 2x liquid cash, algorithm applies an inaccessibility penalty.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.bal_los" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: DEBT -->
+                <div x-show="activeTab === 'debt'" x-transition.opacity class="space-y-8" style="display: none;">
+                    <div class="flex items-center justify-between border-b-2 border-burgundy-100 pb-2">
+                        <h2 class="text-xl font-black text-burgundy-900">Debt Portfolio</h2>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2">
+                        <h3 class="text-sm font-bold text-stone-600 mb-3 border-b pb-1 flex items-center">
+                            Current Balances
+                            <div class="relative flex items-center ml-2 group cursor-help">
+                                <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                    <strong class="text-burgundy-300">Raw Variables:</strong> loan_df account_type.<br>Automatically sums to algorithm's Total Loans.
+                                </div>
+                            </div>
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">Mortgage ($)</label>
+                                <input type="number" x-model.number="inputs.debt_mortgage" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">HELOC ($)</label>
+                                <input type="number" x-model.number="inputs.debt_heloc" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">LOC ($)</label>
+                                <input type="number" x-model.number="inputs.debt_loc" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">Personal Loan ($)</label>
+                                <input type="number" x-model.number="inputs.debt_loan" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Total Debt Payment ($/mo)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Algorithm Math:</strong> Used to dynamically calculate your TDS Ratio (Debt Payment / Monthly Income).
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.debt_payment" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Amount to Principal ($/mo)</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full right-0 md:-left-32 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Raw Variable:</strong> payment_for_principal<br>Multiplied by 24. Tests for Amortizing vs. Interest-Only risk.
+                                    </div>
+                                </div>
+                            </label>
+                            <input type="number" x-model.number="inputs.debt_principal" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-stone-700 mb-1 flex items-center">
+                                <span>Any missed payments on record?</span>
+                                <div class="relative flex items-center ml-2 group cursor-help">
+                                    <i class="fa-solid fa-circle-info text-burgundy-600"></i>
+                                    <div class="absolute z-[100] bottom-full left-0 mb-2 w-64 bg-stone-800 text-white text-xs rounded-lg p-3 shadow-xl border border-stone-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                                        <strong class="text-burgundy-300">Algorithm Math:</strong> max_delinq from trans_df. The strongest predictor in the model (±65 pts).
+                                    </div>
+                                </div>
+                            </label>
+                            <select x-model.number="inputs.delinq" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 font-medium">
+                                <option value="0">No - Perfect Repayment History</option>
+                                <option value="1">Yes - Account was Delinquent</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Live Scorecard (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6 relative z-10">
+            
+            <div class="bg-gradient-to-b from-burgundy-900 to-burgundy-950 text-white rounded-2xl shadow-xl p-8 border-t-[6px] border-burgundy-500 relative overflow-hidden text-center transition-all">
+                <i class="fa-solid fa-chart-pie absolute -right-6 -bottom-6 text-burgundy-800/40 text-9xl pointer-events-none"></i>
+                <span class="text-xs uppercase tracking-[0.2em] text-burgundy-300 font-bold mb-2 block">V4.2 Calibrated Index</span>
+                <div class="text-[5rem] leading-none font-black tracking-tighter my-3 drop-shadow-md" x-text="kyrScore"></div>
+                <div class="inline-block px-5 py-1.5 rounded-full text-sm font-black uppercase tracking-wider mb-2 shadow-sm border"
+                     :class="getBandColor(kyrScore)" x-text="getBandName(kyrScore)"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg border border-stone-200 p-7">
+                <h3 class="text-sm font-black text-stone-800 border-b-2 border-stone-100 pb-3 mb-5 flex justify-between">
+                    <span>PILLAR WEIGHT DISTRIBUTION</span>
+                    <span class="text-stone-400 font-bold">1,000 SCALE</span>
+                </h3>
+                <div class="space-y-5">
+                    <template x-for="p in pillarDisplay" :key="p.name">
+                        <div>
+                            <div class="flex justify-between font-bold text-xs uppercase tracking-wider mb-1.5">
+                                <span class="text-stone-600" x-text="p.name"></span>
+                                <span :class="p.val > 0 ? 'text-emerald-600' : (p.val < 0 ? 'text-rose-600' : 'text-stone-400')" x-text="(p.val > 0 ? '+' : '') + p.val"></span>
+                            </div>
+                            <div class="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden flex">
+                                <div class="h-full bg-rose-500 transition-all duration-300" :style="'width: ' + (p.val < 0 ? (Math.abs(p.val)/p.max)*50 : 0) + '%; margin-left: ' + (50 - (p.val < 0 ? (Math.abs(p.val)/p.max)*50 : 0)) + '%'"></div>
+                                <div class="h-full bg-emerald-500 transition-all duration-300" :style="'width: ' + (p.val > 0 ? (p.val/p.max)*50 : 0) + '%; margin-left: ' + (p.val < 0 ? '50%' : '0')"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function stdDev(arr) {
+            let mean = arr.reduce((a, b) => a + b) / arr.length;
+            return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
+        }
+
+        function kyrApp() {
+            return {
+                activeTab: 'cash_in',
+                tabs: [
+                    { id: 'cash_in', name: 'Cash In', icon: 'fa-solid fa-wallet' },
+                    { id: 'cash_out', name: 'Cash Out', icon: 'fa-solid fa-cart-shopping' },
+                    { id: 'savings', name: 'Investments', icon: 'fa-solid fa-piggy-bank' },
+                    { id: 'liquidity', name: 'Assets', icon: 'fa-solid fa-house' },
+                    { id: 'debt', name: 'Debt', icon: 'fa-solid fa-credit-card' }
+                ],
+                defaults: {
+                    in_salary: 4000, in_transfers: 200,
+                    inflow_monthly: [4200, 4200, 4200, 4200, 4200, 4200],
+                    out_bills: 1500, out_system: 300, out_shopping: 1000, out_large: 300,
+                    outflow_monthly: [3100, 3100, 3100, 3100, 3100, 3100],
+                    sav_rrsp: 100, sav_tfsa: 50, sav_other: 0, sav_freq: 12, sav_auto: 'yes',
+                    bal_rrsp: 25000, bal_tfsa: 15000, bal_other: 5000,
+                    bal_liquid: 2500, bal_los: 450000,
+                    debt_mortgage: 350000, debt_heloc: 5000, debt_loc: 2000, debt_loan: 15000,
+                    debt_payment: 2300, debt_principal: 900, delinq: 0
+                },
+                inputs: {},
+                inChart: null, outChart: null,
+                
+                init() {
+                    this.resetDefaults();
+                    this.$nextTick(() => { this.initCharts(); });
+                },
+                resetDefaults() {
+                    this.inputs = JSON.parse(JSON.stringify(this.defaults));
+                    this.updateCharts();
+                },
+                syncIncome() {
+                    let totalMonthly = (this.inputs.in_salary || 0) + (this.inputs.in_transfers || 0);
+                    this.inputs.inflow_monthly = Array(6).fill(totalMonthly);
+                    this.updateCharts();
+                },
+                syncSpending() {
+                    let totalMonthly = (this.inputs.out_bills || 0) + (this.inputs.out_system || 0) + (this.inputs.out_shopping || 0) + (this.inputs.out_large || 0);
+                    this.inputs.outflow_monthly = Array(6).fill(totalMonthly);
+                    this.updateCharts();
+                },
+                initCharts() {
+                    Chart.defaults.font.family = 'Inter, sans-serif';
+                    const opt = { responsive: true, maintainAspectRatio: false, animation: {duration: 300}, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: {dash: [4,4]} } } };
+                    
+                    this.inChart = new Chart(document.getElementById('inflowChart').getContext('2d'), {
+                        type: 'line', data: { labels: ['M-6','M-5','M-4','M-3','M-2','M-1'], datasets: [{ data: this.inputs.inflow_monthly, borderColor: '#a0253a', backgroundColor: 'rgba(160, 37, 58, 0.1)', borderWidth: 3, fill: true, tension: 0.2, pointBackgroundColor: '#a0253a' }] }, options: opt
+                    });
+                    this.outChart = new Chart(document.getElementById('outflowChart').getContext('2d'), {
+                        type: 'line', data: { labels: ['M-6','M-5','M-4','M-3','M-2','M-1'], datasets: [{ data: this.inputs.outflow_monthly, borderColor: '#44403c', backgroundColor: 'rgba(68, 64, 60, 0.05)', borderWidth: 3, fill: true, tension: 0.2, pointBackgroundColor: '#44403c' }] }, options: opt
+                    });
+                },
+                updateCharts() {
+                    if (this.inChart) { this.inChart.data.datasets[0].data = this.inputs.inflow_monthly; this.inChart.update(); }
+                    if (this.outChart) { this.outChart.data.datasets[0].data = this.inputs.outflow_monthly; this.outChart.update(); }
+                },
+
+                get metrics() {
+                    let totalIn = (this.inputs.in_salary + this.inputs.in_transfers) * 24;
+                    let fixedOut = (this.inputs.out_bills + this.inputs.out_system) * 24;
+                    let flexOut = (this.inputs.out_shopping + this.inputs.out_large) * 24;
+                    let totalOut = fixedOut + flexOut;
+                    let flexRatio = totalOut > 0 ? flexOut / totalOut : 0;
+                    
+                    let invBal = this.inputs.bal_rrsp + this.inputs.bal_tfsa + this.inputs.bal_other;
+                    let loanBal = this.inputs.debt_mortgage + this.inputs.debt_heloc + this.inputs.debt_loc + this.inputs.debt_loan;
+                    let netWorth = this.inputs.bal_liquid + this.inputs.bal_los + invBal - loanBal;
+
+                    let totalContrib = (this.inputs.sav_rrsp + this.inputs.sav_tfsa + this.inputs.sav_other) * 24;
+                    let prinPay = this.inputs.debt_principal * 24;
+                    let tds = this.inputs.debt_payment / ( (this.inputs.in_salary + this.inputs.in_transfers) || 1 );
+
+                    return { totalIn, totalOut, inStd: stdDev(this.inputs.inflow_monthly), outStd: stdDev(this.inputs.outflow_monthly), flexRatio, netWorth, invBal, loanBal, totalContrib, prinPay, tds };
+                },
+
+                get rawScores() {
+                    let m = this.metrics;
+                    let cIn = 0, cOut = 0, sav = 0, liq = 0, dbt = 0;
+
+                    // Cash In (Max +60 / -60)
+                    cIn += (m.totalIn > m.totalOut) ? 20 : -20;
+                    let inVol = Math.min(m.inStd / 2000, 1);
+                    cIn += (1 - inVol) * 20;
+                    cIn -= inVol * 20;
+                    cIn += (m.totalIn > 85000) ? 20 : (m.totalIn > 0 ? -20 : 0);
+
+                    // Cash Out (Max +70 / -70)
+                    cOut += (m.totalIn > m.totalOut) ? 11 : -11;
+                    let outVol = Math.min(m.outStd / 2000, 1);
+                    cOut += (1 - outVol) * 48;
+                    cOut -= outVol * 48;
+                    cOut += (m.flexRatio > 0.35) ? 11 : -11;
+
+                    // Savings (Max +100 / -100)
+                    sav += (m.totalContrib > 0) ? 44 : -43;
+                    let persist24 = this.inputs.sav_freq * 2;
+                    sav += (persist24 / 24) * 10;
+                    if (persist24 < 12 && m.totalContrib > 0) sav -= 10;
+                    sav += (m.totalContrib > 4000) ? 36 : (m.totalContrib > 0 ? -37 : 0);
+                    sav += (this.inputs.sav_auto === 'yes') ? 10 : -10;
+
+                    // Liquidity (Max +95 / -95)
+                    let avgOut = Math.max(m.totalOut / 24, 1);
+                    liq += (this.inputs.bal_liquid / avgOut >= 1) ? 51 : -42;
+                    liq += (this.inputs.bal_liquid / (this.inputs.bal_liquid + this.inputs.bal_los + 1)) * 24;
+                    if (this.inputs.bal_los > this.inputs.bal_liquid * 2) liq -= 30;
+                    liq += (m.netWorth > 0) ? 10 : -10;
+                    liq += (m.netWorth > 35000) ? 10 : -13;
+
+                    // Debt (Max +87 / -85)
+                    dbt += (1 - m.tds) * 10;
+                    dbt -= m.tds * 12;
+                    dbt += (m.prinPay > 0) ? 10 : (m.loanBal > 0 ? -10 : 0);
+                    dbt += (this.inputs.delinq === 0) ? 67 : -63;
+
+                    return { cIn: Math.round(cIn), cOut: Math.round(cOut), sav: Math.round(sav), liq: Math.round(liq), dbt: Math.round(dbt) };
+                },
+
+                get pillarDisplay() {
+                    let r = this.rawScores;
+                    return [
+                        { name: 'Cash In', val: r.cIn, max: 60 },
+                        { name: 'Cash Out', val: r.cOut, max: 70 },
+                        { name: 'Savings', val: r.sav, max: 100 },
+                        { name: 'Liquidity', val: r.liq, max: 95 },
+                        { name: 'Debt', val: r.dbt, max: 87 }
+                    ];
+                },
+
+                get kyrScore() {
+                    let r = this.rawScores;
+                    let rawSum = 500 + r.cIn + r.cOut + r.sav + r.liq + r.dbt;
+                    let scaled = Math.round(((rawSum - 90) / 822) * 1000);
+                    return Math.min(1000, Math.max(0, scaled));
+                },
+
+                getBandColor(score) {
+                    if (score >= 750) return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                    if (score >= 600) return 'bg-sky-100 text-sky-800 border-sky-300';
+                    if (score >= 450) return 'bg-amber-100 text-amber-800 border-amber-300';
+                    return 'bg-burgundy-100 text-burgundy-800 border-burgundy-300';
+                },
+                getBandName(score) {
+                    if (score >= 750) return 'Tier 1: Highly Resilient';
+                    if (score >= 600) return 'Tier 2: Coping';
+                    if (score >= 450) return 'Tier 3: Vulnerable';
+                    return 'Tier 4: Distressed';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
